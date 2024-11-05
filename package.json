@@ -1,0 +1,13 @@
+{
+	"name": "netsuite-template-editor",
+	"version": "1.0.0",
+	"main": "editor.js",
+	"scripts": {
+		"start": "bun run editor.js",
+		"dev": "bun run --watch editor.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": ""
+}
