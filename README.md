@@ -1,5 +1,13 @@
 # Netsuite Template Editor
 
+# Shortcuts
+
+[BFO Documentation](https://bfo.com/products/report/docs/tags/)
+
+[FreeMarker Documentation](https://freemarker.apache.org/docs/index.html)
+
+[NetSuite Documentation](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/book_5164527716.html)
+
 ## Usage
 
 1. Clone the repository
