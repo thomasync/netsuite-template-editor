@@ -1,12 +1,16 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { watch } from 'chokidar';
+import { createServer } from 'http';
 
 (async () => {
 	const DEBUG = true; // Set to false to disable debug logs
 	const SHOW_PREVIEW = true; // Set to false to disable preview
 	const FETCH_AUTH = {};
 	const watchs = new Map();
+
+	let preview_server;
+	let preview_latest;
 
 	await checkVersion();
 	main();
@@ -18,6 +22,10 @@ import { watch } from 'chokidar';
 	async function main() {
 		await waitFetchFile();
 		parseFetchFile();
+
+		if (SHOW_PREVIEW) {
+			createPreviewServer();
+		}
 
 		watchTemplate();
 	}
@@ -98,6 +106,7 @@ import { watch } from 'chokidar';
 				log('Preview fetched successfully', 'info');
 				const preview = await response.arrayBuffer();
 				writeFileSync(join(__dirname, 'preview.pdf'), Buffer.from(preview));
+				preview_latest = new Date().getTime();
 			} else {
 				log('Error getting preview', 'error');
 			}
@@ -211,6 +220,80 @@ import { watch } from 'chokidar';
 		} else {
 			console.log(`[${date}] [${type.toUpperCase()}] ${message}`);
 		}
+	}
+
+	/**
+	 * Create http server and show preview
+	 */
+	function createPreviewServer() {
+		preview_server = createServer((req, res) => {
+			const previewPath = join(__dirname, 'preview.pdf');
+			if (existsSync(previewPath)) {
+				switch (req.url) {
+					case '/latest':
+						res.writeHead(200, { 'Content-Type': 'application/json' });
+						res.end(JSON.stringify({ latest: preview_latest }));
+						break;
+					case '/preview':
+						const preview = readFileSync(previewPath);
+						res.writeHead(200, { 'Content-Type': 'application/pdf' });
+						res.end(preview);
+						break;
+					default:
+						res.writeHead(200, { 'Content-Type': 'text/html' });
+						res.end(_makePreviewPage());
+						break;
+				}
+			} else {
+				res.writeHead(404, { 'Content-Type': 'text/html' });
+				res.end('No preview available');
+			}
+		}).listen(8075, () => {
+			log('Preview server running on http://localhost:8075', 'info');
+		});
+	}
+
+	function _makePreviewPage() {
+		return `
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Preview</title>
+				<style>
+					body {
+						margin: 0;
+						padding: 0;
+						overflow: hidden;
+					}
+					embed {
+						width: 100%;
+						height: 100vh;
+					}
+				</style>
+			</head>
+			<body>
+				<embed src="http://localhost:8075/preview" width="100%" height="100%">
+				<script>
+					let preview_latest;
+					let is_first = true;
+					setInterval(() => {
+						fetch('http://localhost:8075/latest')
+							.then((response) => response.json())
+							.then((data) => {
+								if (is_first || preview_latest !== data.latest) {
+									is_first = false;
+									preview_latest = data.latest;
+									document.querySelector('embed').src = 'http://localhost:8075/preview';
+								}
+							}
+						);
+					}, 500);
+				</script>
+			</body>
+			</html>
+		`;
 	}
 
 	/**
