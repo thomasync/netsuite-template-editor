@@ -2,12 +2,13 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { watch } from 'chokidar';
 
-(() => {
+(async () => {
 	const DEBUG = true; // Set to false to disable debug logs
 	const SHOW_PREVIEW = true; // Set to false to disable preview
 	const FETCH_AUTH = {};
 	const watchs = new Map();
 
+	await checkVersion();
 	main();
 
 	/**
@@ -18,7 +19,6 @@ import { watch } from 'chokidar';
 		await waitFetchFile();
 		parseFetchFile();
 
-		createTemplate();
 		watchTemplate();
 	}
 
@@ -52,10 +52,13 @@ import { watch } from 'chokidar';
 	 * @returns {void}
 	 */
 	function watchTemplate() {
+		createTemplate();
+
 		const templatePath = join(__dirname, 'template.html');
 
 		// watch for changes in template.html
 		if (!watchs.has('template.html')) {
+			log('Waiting for template.html changes...', 'info');
 			const watchTemplateFile = watch(templatePath).on('change', () => {
 				log('template.html has changed');
 				const template = readFileSync(templatePath, 'utf-8');
@@ -206,7 +209,25 @@ import { watch } from 'chokidar';
 		if (type === 'error') {
 			console.error(`[${date}] [ERROR] ${message}`);
 		} else {
-			console.log(`[${date}] [INFO] ${message}`);
+			console.log(`[${date}] [${type.toUpperCase()}] ${message}`);
+		}
+	}
+
+	/**
+	 * Verify latest version
+	 */
+	async function checkVersion() {
+		const { version } = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'));
+		const response = await fetch(
+			'https://raw.githubusercontent.com/thomasync/netsuite-template-editor/refs/heads/main/package.json'
+		);
+		const { version: latestVersion } = await response.json();
+
+		if (version !== latestVersion) {
+			log(`New version available: ${latestVersion}`, 'info');
+			log('Execute `git pull` to update', 'info');
+		} else {
+			log(`Latest version: ${version}`, 'info');
 		}
 	}
 })();
