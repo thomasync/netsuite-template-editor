@@ -219,7 +219,8 @@ import { watch } from 'chokidar';
 	async function checkVersion() {
 		const { version } = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'));
 		const response = await fetch(
-			'https://raw.githubusercontent.com/thomasync/netsuite-template-editor/refs/heads/main/package.json'
+			'https://raw.githubusercontent.com/thomasync/netsuite-template-editor/refs/heads/main/package.json?_v=' +
+				Date.now()
 		);
 		const { version: latestVersion } = await response.json();
 
