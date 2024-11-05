@@ -4,6 +4,7 @@ import { watch } from 'chokidar';
 
 (() => {
 	const DEBUG = true; // Set to false to disable debug logs
+	const SHOW_PREVIEW = true; // Set to false to disable preview
 	const FETCH_AUTH = {};
 	const watchs = new Map();
 
@@ -72,14 +73,30 @@ import { watch } from 'chokidar';
 	 */
 	function sendTemplate(template) {
 		const body = makeBody(FETCH_AUTH.body, template);
-		const fetchFunction = FETCH_AUTH.function.replace('%BODY%', body);
+		const fetchFunction = FETCH_AUTH.function.replace('%BODY%', body).replace('fetch', 'return fetch');
 
-		const fetchFunctionWithBody = new Function(fetchFunction.replace('fetch', 'return fetch'));
+		const fetchFunctionWithBody = new Function(fetchFunction);
 		fetchFunctionWithBody().then((response) => {
 			if (response.ok) {
 				log('Template sent successfully', 'info');
+				if (SHOW_PREVIEW) {
+					getPreview(fetchFunction);
+				}
 			} else {
 				log('Error sending template', 'error');
+			}
+		});
+	}
+
+	function getPreview(fetchFunction) {
+		const fetchFunctionWithBody = new Function(fetchFunction.replace('action=SAVE_EDIT', 'action=PREVIEW'));
+		fetchFunctionWithBody().then(async (response) => {
+			if (response.ok) {
+				log('Preview fetched successfully', 'info');
+				const preview = await response.arrayBuffer();
+				writeFileSync(join(__dirname, 'preview.pdf'), Buffer.from(preview));
+			} else {
+				log('Error getting preview', 'error');
 			}
 		});
 	}

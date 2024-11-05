@@ -3,3 +3,4 @@ template.html
 package-lock.json
 .DS_Store
 node_modules/
+preview.pdf
