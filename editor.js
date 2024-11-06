@@ -87,11 +87,16 @@ import { createServer } from 'http';
 		const fetchFunction = FETCH_AUTH.function.replace('%BODY%', body).replace('fetch', 'return fetch');
 
 		const fetchFunctionWithBody = new Function(fetchFunction);
-		fetchFunctionWithBody().then((response) => {
+		fetchFunctionWithBody().then(async (response) => {
 			if (response.ok) {
-				log('Template sent successfully', 'info');
-				if (SHOW_PREVIEW) {
-					getPreview(fetchFunction);
+				const data = await response.json();
+				if (data.errorMessage === '') {
+					log('Template sent successfully', 'info');
+					if (SHOW_PREVIEW) {
+						getPreview(fetchFunction);
+					}
+				} else {
+					log(data.errorMessage, 'error');
 				}
 			} else {
 				log('Error sending template', 'error');
@@ -213,6 +218,10 @@ import { createServer } from 'http';
 	 */
 	function log(message, type = 'debug') {
 		if (type === 'debug' && !DEBUG) return;
+
+		if (typeof message === 'object') {
+			message = JSON.stringify(message, null, 2);
+		}
 
 		const date = new Date().toLocaleString('fr-FR');
 		if (type === 'error') {
