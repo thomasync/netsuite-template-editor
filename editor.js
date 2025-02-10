@@ -5,7 +5,7 @@ import { createServer } from 'http';
 
 (async () => {
 	const DEBUG = true; // Set to false to disable debug logs
-	const SHOW_PREVIEW = true; // Set to false to disable preview
+	const SHOW_PREVIEW = false; // Set to false to disable preview
 	const FETCH_AUTH = {};
 	const watchs = new Map();
 
