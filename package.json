@@ -9,5 +9,9 @@
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
-	"description": ""
+	"description": "",
+	"devDependencies": {
+		"bun": "^1.2.2",
+		"chokidar": "^4.0.3"
+	}
 }
